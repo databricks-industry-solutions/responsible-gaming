@@ -32,39 +32,128 @@ from solacc.companion import NotebookSolutionCompanion
 
 # COMMAND ----------
 
+# MAGIC %run "./_resources/notebook_config"
+
+# COMMAND ----------
+
+pipeline_json = {
+    "clusters": [
+        {
+            "label": "default",
+            "autoscale": {
+                "min_workers": 1,
+                "max_workers": 5,
+                "mode": "LEGACY"
+            }
+        }
+    ],
+    "development": True,
+    "continuous": False,
+    "channel": "CURRENT",
+    "edition": "ADVANCED",
+    "photon": False,
+    "libraries": [
+        {
+            "notebook": {
+                "path": "01_DLT"
+            }
+        }
+    ],
+    "name": config["pipeline_name"],
+    "configuration": {
+      "data.path": config["data_path"]
+    },
+    "storage": config["pipeline_path"],
+    "target": config["database"]
+}
+
+# COMMAND ----------
+
+spark.sql(f"CREATE DATABASE IF NOT EXISTS databricks_solacc LOCATION '/databricks_solacc/'")
+spark.sql(f"CREATE TABLE IF NOT EXISTS databricks_solacc.dlt (path STRING, pipeline_id STRING, solacc STRING)")
+dlt_config_table = "databricks_solacc.dlt"
+
+# COMMAND ----------
+
+pipeline_id = NotebookSolutionCompanion().deploy_pipeline(pipeline_json, dlt_config_table, spark)
+
+# COMMAND ----------
+
 job_json = {
         "timeout_seconds": 28800,
         "max_concurrent_runs": 1,
         "tags": {
             "usage": "solacc_testing",
-            "group": "SOLACC"
+            "group": "CME"
         },
         "tasks": [
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "rmg_cluster",
                 "notebook_task": {
-                    "notebook_path": f"01_Introduction_And_Setup"
+                    "notebook_path": f"00_Overview"
                 },
-                "task_key": "sample_solacc_01"
+                "task_key": "rmg_00"
             },
             {
-                "job_cluster_key": "sample_solacc_cluster",
-                "notebook_task": {
-                    "notebook_path": f"02_Analysis"
+                "pipeline_task": {
+                    "pipeline_id": pipeline_id
                 },
-                "task_key": "sample_solacc_02",
+                "task_key": "rmg_01",
+                "description": "",
                 "depends_on": [
                     {
-                        "task_key": "sample_solacc_01"
+                        "task_key": "rmg_00"
+                    }
+                ]
+            },
+          {
+                "job_cluster_key": "rmg_cluster",
+                "libraries": [],
+                "notebook_task": {
+                    "notebook_path": f"02_EDA"
+                },
+                "task_key": "rmg_02",
+                "description": "",
+                "depends_on": [
+                    {
+                        "task_key": "rmg_01"
+                    }
+                ]
+            },
+          {
+                "job_cluster_key": "rmg_cluster",
+                "libraries": [],
+                "notebook_task": {
+                    "notebook_path": f"03_Feature_Store"
+                },
+                "task_key": "rmg_03",
+                "description": "",
+                "depends_on": [
+                    {
+                        "task_key": "rmg_02"
+                    }
+                ]
+            },
+          {
+                "job_cluster_key": "rmg_cluster",
+                "libraries": [],
+                "notebook_task": {
+                    "notebook_path": f"04_ML"
+                },
+                "task_key": "rmg_04",
+                "description": "",
+                "depends_on": [
+                    {
+                        "task_key": "rmg_03"
                     }
                 ]
             }
         ],
         "job_clusters": [
             {
-                "job_cluster_key": "sample_solacc_cluster",
+                "job_cluster_key": "rmg_cluster",
                 "new_cluster": {
-                    "spark_version": "11.3.x-cpu-ml-scala2.12",
+                    "spark_version": "11.1.x-cpu-ml-scala2.12",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
@@ -82,4 +171,10 @@ job_json = {
 
 dbutils.widgets.dropdown("run_job", "False", ["True", "False"])
 run_job = dbutils.widgets.get("run_job") == "True"
-NotebookSolutionCompanion().deploy_compute(job_json, run_job=run_job)
+nsc = NotebookSolutionCompanion()
+nsc.deploy_compute(job_json, run_job=run_job)
+nsc.deploy_dbsql("./RMG_Dashboard.dbdash")
+
+# COMMAND ----------
+
+
