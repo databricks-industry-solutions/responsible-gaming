@@ -14,6 +14,11 @@ config = {
 
 # COMMAND ----------
 
+# DBTITLE 1,Create source data path
+dbutils.fs.mkdirs(f"{config['data_path']}/raw")
+
+# COMMAND ----------
+
 # DBTITLE 1,Set current database
 _ = spark.sql(f"CREATE DATABASE IF NOT EXISTS {config['database']}")
 _ = spark.sql(f"USE {config['database']}")
