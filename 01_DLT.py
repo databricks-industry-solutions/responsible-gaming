@@ -33,7 +33,7 @@ data_path = spark.conf.get("data.path")
 # DBTITLE 1,bronze_clickstream
 @dlt.table
 def bronze_clickstream():
-  raw_data_path = f'{data_path}raw/'
+  raw_data_path = f'{data_path}/raw/'
   return spark.read.json(raw_data_path)
 
 # COMMAND ----------
