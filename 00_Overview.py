@@ -28,5 +28,5 @@ config
 # COMMAND ----------
 
 # DBTITLE 1,Initialize source data if it does not exist
-if len(dbutils.fs.ls(f"{config['data_path']}/raw")) == 0:
-  dbutils.fs.cp("s3a://db-gtm-industry-solutions/data/CME/real_money_gaming/data/raw", f"{config['data_path']}/raw", True)
+#if len(dbutils.fs.ls(f"{config['data_path']}/raw")) == 0:
+#  dbutils.fs.cp("s3a://db-gtm-industry-solutions/data/CME/real_money_gaming/data/raw", f"{config['data_path']}/raw", True)

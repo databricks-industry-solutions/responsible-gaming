@@ -1,4 +1,15 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC * TO DO
+# MAGIC   * Add missing game: Baccarat
+# MAGIC   * Add missing game: Craps
+# MAGIC   * Add missing game: Sports Betting
+# MAGIC   * Make wagers more consistent across bets (e.g. persist amount across day/game/session)
+# MAGIC   * Update terms used for wager_amount, win_loss, win_losos_amount in becaons and functions for consistency
+# MAGIC   * Remove hardcoding for database/table name
+
+# COMMAND ----------
+
 # MAGIC %pip install faker==13.15.0
 
 # COMMAND ----------
@@ -8,6 +19,7 @@ from pyspark.sql.functions import col
 from faker import Faker
 from faker.providers import internet, misc, date_time
 from datetime import datetime, timedelta
+from collections import Counter
 import numpy as np
 import pandas as pd
 import random
@@ -18,10 +30,6 @@ import shutil
 # COMMAND ----------
 
 fake = Faker()
-
-# COMMAND ----------
-
-numCustomers = 500
 
 # COMMAND ----------
 
@@ -93,6 +101,82 @@ last_month_active_df = pd.DataFrame(
    'D': [0.45, 0.14, 0.03, 0.03, 0.03, 0.03, 0.02, 0.01, 0.02, 0.01, 0.01, 0.22],
    'E': [0.50, 0.13, 0.04, 0.03, 0.03, 0.02, 0.03, 0.01, 0.01, 0.01, 0.01, 0.18]})
 
+# COMMAND ----------
+
+########################################
+# CONSTRUCT BEACON FUNCTIONS
+########################################
+
+def get_empty_beacon():
+  empty_beacon = {
+    'customer_id': None,
+    'age_band': None,
+    'gender': None,
+    'date': None,
+    'date_transaction_id': None,
+    'event_type': None,
+    'game_type': None,
+    'wager_amount': None,
+    'win_loss': None,
+    'win_loss_amount': None,
+    'initial_balance': None,
+    'ending_balance': None,
+    'withdrawal_amount': None,
+    'deposit_amount': None
+  }
+  return empty_beacon
+
+def get_registration_beacon(customer_id, registration_date, age_band, gender):
+  beacon = get_empty_beacon()
+  beacon['customer_id'] = customer_id
+  beacon['date'] = registration_date
+  beacon['event_type'] = 'register'
+  beacon['age_band'] = age_band
+  beacon['gender'] = gender
+  return beacon
+
+def get_flagged_high_risk_beacon(customer_id, last_active_date):
+  beacon = get_empty_beacon()
+  beacon['customer_id'] = customer_id
+  beacon['date'] = last_active_date
+  beacon['event_type'] = 'flagged_high_risk'
+  return beacon
+
+def get_bet_beacon(customer_id,date,date_transaction_id,game_type,wager_amount,win_loss,win_loss_amount,initial_balance,ending_balance):
+  beacon = get_empty_beacon()
+  beacon['customer_id'] = customer_id
+  beacon['date'] = date
+  beacon['date_transaction_id'] = date_transaction_id
+  beacon['event_type'] = 'bet'
+  beacon['game_type'] = game_type
+  beacon['wager_amount'] = wager_amount
+  beacon['win_loss'] = win_loss
+  beacon['win_loss_amount'] = win_loss_amount
+  beacon['initial_balance'] = initial_balance
+  beacon['ending_balance'] = ending_balance
+  return beacon
+
+def get_deposit_beacon(customer_id,date,date_transaction_id,deposit_amount,initial_balance,ending_balance):
+  beacon = get_empty_beacon()
+  beacon['customer_id'] = customer_id
+  beacon['date'] = date
+  beacon['date_transaction_id'] = date_transaction_id
+  beacon['event_type'] = 'deposit'
+  beacon['deposit_amount'] = deposit_amount
+  beacon['initial_balance'] = initial_balance
+  beacon['ending_balance'] = ending_balance
+  return beacon
+
+def get_withdrawal_beacon(customer_id,date,date_transaction_id,withdrawal_amount,initial_balance,ending_balance):
+  beacon = get_empty_beacon()
+  beacon['customer_id'] = customer_id
+  beacon['date'] = date
+  beacon['date_transaction_id'] = date_transaction_id
+  beacon['event_type'] = 'withdrawal'
+  beacon['withdrawal_amount'] = withdrawal_amount
+  beacon['initial_balance'] = initial_balance
+  beacon['ending_balance'] = ending_balance
+  return beacon
 
 # COMMAND ----------
 
@@ -100,252 +184,401 @@ last_month_active_df = pd.DataFrame(
 # HELPER FUNCTIONS
 ########################################
 
-def getRandomWeighted(df,vals,weights):
+def _get_random_weighted(df,vals,weights):
   return random.choices(list(df[vals]),list(df[weights]))[0]
 
 ########################################
-# DATA GEN FUNCTIONS
+# CUSTOMERS
 ########################################
 
-def getCustomerId():
+def get_customer_id():
   return fake.uuid4()
 
-def getCustomerSegment():
-  return getRandomWeighted(customer_segments_df,'segment','segment_weight')
+def get_customer_segment():
+  return _get_random_weighted(customer_segments_df,'segment','segment_weight')
 
-def getRegistrationDate():
+def get_registration_date():
   return '2021-01-01'
 
-def getLastActiveDate(customerSegment):
+def get_last_active_date(customer_segment):
   fmt = "%Y-%m-%d"
-  last_month_active = getRandomWeighted(last_month_active_df,'month',customerSegment)
+  last_month_active = _get_random_weighted(last_month_active_df,'month',customer_segment)
   num_days_in_month = last_month_active_df['days_in_month'][last_month_active-1]
   last_active_day_in_month = random.choices([i for i in range(1,num_days_in_month+1)])[0]
   last_active_date_str = "2021-{}-{}".format(last_month_active,last_active_day_in_month)
   return datetime.strptime(last_active_date_str, fmt).strftime(fmt)
-
-def getHighRiskFlag(customerSegment):
-  risk_prob = high_risk_prob_df[high_risk_prob_df['segment'] == customerSegment]['segment_weight'].item()
+  
+def get_high_risk_flag(customer_segment):
+  risk_prob = high_risk_prob_df[high_risk_prob_df['segment'] == customer_segment]['segment_weight'].item()
   return random.choices([0,1],[(1-risk_prob),risk_prob])[0]
+  
+def get_age_band():
+  return _get_random_weighted(age_band_df,'age_band','age_band_weight')
 
-def getAgeBand():
-  return getRandomWeighted(age_band_df,'age_band','age_band_weight')
+def get_gender():
+  return _get_random_weighted(gender_df,'gender','gender_weight')
 
-def getGender():
-  return getRandomWeighted(gender_df,'gender','gender_weight')
+########################################
+# SESSIONS
+########################################
 
-def getListOfDays(registrationDate, lastActiveDate):
+def _get_list_of_days(registration_date, last_active_date):
   fmt = "%Y-%m-%d"
-  registrationDate_fmt = datetime.strptime(registrationDate, fmt) 
-  lastActiveDate_fmt = datetime.strptime(lastActiveDate, fmt)
+  registration_date_fmt = datetime.strptime(registration_date, fmt) 
+  last_active_date_fmt = datetime.strptime(last_active_date, fmt)
   
-  delta = lastActiveDate_fmt - registrationDate_fmt
+  delta = last_active_date_fmt - registration_date_fmt
   
-  listOfDays_fmt = [registrationDate_fmt + timedelta(days=i) for i in range(delta.days + 1)]
-  
-  return [i.strftime(fmt) for i in listOfDays_fmt]
+  list_of_days_fmt = [registration_date_fmt + timedelta(days=i) for i in range(delta.days + 1)]
 
-def getIsActiveDayFlag(customerSegment):
-  active_day_prob = active_day_prob_df[active_day_prob_df['segment'] == customerSegment]['active_day_prob'].item()
+  return [i.strftime(fmt) for i in list_of_days_fmt]
+  
+def _get_is_active_day_flag(customer_segment):
+  active_day_prob = active_day_prob_df[active_day_prob_df['segment'] == customer_segment]['active_day_prob'].item()
   return random.choices([0,1],[(1-active_day_prob),active_day_prob])[0]
 
-def getGameType(customerSegment):
-  sportsBetProb = sports_bet_prob_df[sports_bet_prob_df['segment'] == customerSegment]['sports_bet_prob'].item()
-  isSportsBet = random.choices([0,1],[(1-sportsBetProb), sportsBetProb])[0]
-  gameType = [random.choices(non_sports_games)[0] if isSportsBet == 1 else 'Sports Betting'][0]
-  return gameType
+def get_list_of_active_days(customer_segment, registration_date, last_active_date):
+  list_of_days = _get_list_of_days(registration_date, last_active_date)
+  list_of_active_day_flags = [_get_is_active_day_flag(customer_segment) for date in list_of_days]
+  return [date for (date,val) in tuple(zip(list_of_days,list_of_active_day_flags)) if val == 1]
 
-def getNumDailyBets(customerSegment):
-  dailyBetsMax = daily_bets_max_df[daily_bets_max_df['segment'] == customerSegment]['max_daily_bets'].item()
-  #numBets = int(random.gauss(dailyBetsMean,3))
-  numBets = round(random.triangular(1,dailyBetsMax,dailyBetsMax/2))
-  return numBets  
+########################################
+# BETS
+########################################
 
-def getBetWager(customerSegment):
-  betWagerMean = bet_wager_df[bet_wager_df['segment'] == customerSegment]['mean_bet'].item()
-  betWagerMax = bet_wager_df[bet_wager_df['segment'] == customerSegment]['max_bet'].item()
-  betWager = round(random.triangular(1,betWagerMax,betWagerMean))
-  return betWager
-
-def getHouseAdvantage(gameType):
-  return house_advantage_df[house_advantage_df['game_type'] == gameType]['house_advantage'].item()
-
-def getBet(customerSegment):
-  gameType = getGameType(customerSegment)
-  wager = getBetWager(customerSegment)
-  winFlag = None
-  houseAdvantage = getHouseAdvantage(gameType)
-  theoreticalLoss = round(houseAdvantage * wager,2)
+def _get_num_daily_bets(customer_segment):
+  daily_bets_max = daily_bets_max_df[daily_bets_max_df['segment'] == customer_segment]['max_daily_bets'].item()
+  num_bets = round(random.triangular(1,daily_bets_max,daily_bets_max/2))
+  return num_bets
   
-  return {'gameType':gameType, 'wager':wager,'winFlag':winFlag,'houseAdvantage':houseAdvantage,'theoreticalLoss':theoreticalLoss}
+def _get_game_type(customer_segment):
+  sports_bet_prob = sports_bet_prob_df[sports_bet_prob_df['segment'] == customer_segment]['sports_bet_prob'].item()
+  is_sports_bet = random.choices([0,1],[(1-sports_bet_prob), sports_bet_prob])[0]
+  game_type = [random.choices(non_sports_games)[0] if is_sports_bet == 1 else 'Sports Betting'][0]
+  return game_type
 
-def getIsWithdrawalDay(customerSegment):
-  withdrawal_prob = withdrawal_prob_df[withdrawal_prob_df['segment'] == customerSegment]['withdrawal_prob'].item()
+def get_daily_bets_by_game_type(customer_segment):
+  num_bets = _get_num_daily_bets(customer_segment)
+  bets_list = list()
+  bets_dict = dict(Counter([_get_game_type(customer_segment) for bet in range(num_bets)]))
+  for key in bets_dict.keys():
+    _ = [bets_list.append(key) for i in range(num_bets)]
+  bets_list.append('done')
+  return bets_list
+
+########################################
+# WAGERS
+########################################
+
+def get_bet_wager(customer_segment):
+  bet_wager_mean = bet_wager_df[bet_wager_df['segment'] == customer_segment]['mean_bet'].item()
+  bet_wager_max = bet_wager_df[bet_wager_df['segment'] == customer_segment]['max_bet'].item()
+  bet_wager = round(random.triangular(1,bet_wager_max,bet_wager_mean))
+  bet_wager = int(round(bet_wager/5)*5) if (bet_wager > 2) else int(round(bet_wager))
+  return float(bet_wager)
+
+########################################
+# DEPOSITS & WITHDRAWALS
+########################################
+
+def get_deposit_amount(customer_segment):
+  deposit_max = deposit_max_amount_df[deposit_max_amount_df['segment'] == customer_segment]['max_deposit'].item()
+  deposit_amount = round(random.triangular(5,deposit_max,deposit_max/2),2)
+  deposit_amount = int(round(deposit_amount/10)*10) if (deposit_amount >= 10) else 5
+  return float(deposit_amount)
+
+def get_is_withdrawal_day(customer_segment):
+  withdrawal_prob = withdrawal_prob_df[withdrawal_prob_df['segment'] == customer_segment]['withdrawal_prob'].item()
   return random.choices([0,1],[(1-withdrawal_prob),withdrawal_prob])[0]
 
-def getWithdrawalAmount(customerSegment):
-  withdrawalMax = withdrawal_max_amount_df[withdrawal_max_amount_df['segment'] == customerSegment]['max_withdrawal'].item()
-  withdrawalAmt = round(random.triangular(10,withdrawalMax,withdrawalMax/2),2)
-  return withdrawalAmt
-  
-def getIsDepositDay(customerSegment):
-  deposit_prob = deposit_prob_df[deposit_prob_df['segment'] == customerSegment]['deposit_prob'].item()
-  return random.choices([0,1],[(1-deposit_prob),deposit_prob])[0]
-
-def getDepositAmount(customerSegment):
-  depositMax = deposit_max_amount_df[deposit_max_amount_df['segment'] == customerSegment]['max_deposit'].item()
-  depositAmt = round(random.triangular(5,depositMax,depositMax/2),2)
-  return depositAmt
-
-# COMMAND ----------
+# Not currently in use; will need to change to min to use
+def getWithdrawalAmount(customer_segment):
+  withdrawal_max = withdrawal_max_amount_df[withdrawal_max_amount_df['segment'] == customer_segment]['max_withdrawal'].item()
+  withdrawal_amount = round(random.triangular(10,withdrawal_max,withdrawal_max/2),2)
+  return float(withdrawal_amount)
 
 ########################################
-# CONSTRUCT BEACON FUNCTIONS
+# Games
 ########################################
-
-def getEmptyBeacon():
-  emptyBeacon = {
-    'customerId': None,
-    'date': None,
-    'dateBetNumber': None,
-    'eventType': None,
-    'gameType': None,
-    'wager': None,
-    'winFlag': None,
-    'theoreticalLoss': None,
-    'ageBand': None,
-    'gender': None,
-    'withdrawalAmount': None,
-    'depositAmount': None
-  }
-  return emptyBeacon
-
-def getRegistrationBeacon(customerId, registrationDate, ageBand, gender):
-  beacon = getEmptyBeacon()
-  beacon['customerId'] = customerId
-  beacon['date'] = registrationDate
-  beacon['eventType'] = 'register'
-  beacon['ageBand'] = ageBand
-  beacon['gender'] = gender
+class Blackjack:
+  def __init__(self):
+    pass
   
-  return '\n'+json.dumps(beacon)
-
-def getFlaggedHighRiskBeacon(customerId, lastActiveDate):
-  beacon = getEmptyBeacon()
-  beacon['customerId'] = customerId
-  beacon['date'] = lastActiveDate
-  beacon['eventType'] = 'flaggedHighRisk'
+  def _get_win_loss(self):
+    return random.choices(['win','loss','tie'],[0.42, 0.49, 0.09])[0]
   
-  return '\n'+json.dumps(beacon)
-
-def getBetBeacon(customerId,date,dateBetNum, bet):
-  beacon = getEmptyBeacon()
-  beacon['customerId'] = customerId
-  beacon['date'] = date
-  beacon['dateBetNumber'] = dateBetNum
-  beacon['eventType'] = 'bet'
-  beacon['gameType'] = bet['gameType']
-  beacon['wager'] = bet['wager']
-  beacon['winFlag'] = bet['winFlag']
-  beacon['theoreticalLoss'] = bet['theoreticalLoss']
+  def _get_is_blackjack(self):
+    return random.choices([0,1],[1-0.0475,0.0475])[0]
   
-  return '\n'+json.dumps(beacon)
-
-def getWithdrawalBeacon(customerId,date,withdrawalAmount):
-  beacon = getEmptyBeacon()
-  beacon['customerId'] = customerId
-  beacon['date'] = date
-  beacon['eventType'] = 'withdrawal'
-  beacon['withdrawalAmount'] = withdrawalAmount
+  def _get_payout(self,wager, win_loss,is_blackjack):
+    if win_loss == 'win' and is_blackjack == 1:
+      return (3/2 * wager) + wager
+    elif win_loss == 'win' and is_blackjack == 0:
+      return (1 * wager) + wager
+    elif win_loss == 'tie':
+      return 0
+    else:
+      return -wager
   
-  return '\n'+json.dumps(beacon)
+  def play(self,wager):
+    win_loss = self._get_win_loss()
+    is_blackjack = self._get_is_blackjack()
+    payout = self._get_payout(wager, win_loss, is_blackjack)
+    return {'game_type': 'blackjack', 'wager': wager, 'win_loss': win_loss, 'is_blackjack': is_blackjack, 'win_loss_amount': float(payout)}
 
-def getDepositBeacon(customerId,date,depositAmount):
-  beacon = getEmptyBeacon()
-  beacon['customerId'] = customerId
-  beacon['date'] = date
-  beacon['eventType'] = 'deposit'
-  beacon['depositAmount'] = depositAmount
+###   
+class Roulette:
+  def __init__(self):
+    self.rules = {"straight_up":     {"freq_of_bet": 0.03, "win_prob": 0.0260, "payout": 35/1},
+                  "split":           {"freq_of_bet": 0.02, "win_prob": 0.0530, "payout": 17/1}, 
+                  "trio":            {"freq_of_bet": 0.02, "win_prob": 0.0526, "payout": 11/1},
+                  "street":          {"freq_of_bet": 0.03, "win_prob": 0.0790, "payout": 11/1},
+                  "corner":          {"freq_of_bet": 0.03, "win_prob": 0.1050, "payout": 8/1},
+                  "five_number_bet": {"freq_of_bet": 0.04, "win_prob": 0.1320, "payout": 6/1},
+                  "line":            {"freq_of_bet": 0.04, "win_prob": 0.1580, "payout": 5/1},
+                  "snake_bet":       {"freq_of_bet": 0.13, "win_prob": 0.3158, "payout": 2/1},
+                  "column":          {"freq_of_bet": 0.12, "win_prob": 0.3160, "payout": 2/1},
+                  "dozen":           {"freq_of_bet": 0.13, "win_prob": 0.3160, "payout": 2/1},
+                  "high_low":        {"freq_of_bet": 0.13, "win_prob": 0.4737, "payout": 1/1},
+                  "even_odd":        {"freq_of_bet": 0.12, "win_prob": 0.4737, "payout": 1/1},
+                  "red_black":       {"freq_of_bet": 0.14, "win_prob": 0.4737, "payout": 1/1}}
   
-  return '\n'+json.dumps(beacon)
+  def _get_win_loss(self,wager_type):
+    win_prob = self.rules[wager_type]['win_prob']
+    return random.choices(['win','loss'],[win_prob,1-win_prob])[0]
+  
+  def _get_payout(self,wager,wager_type,win_loss):
+    if win_loss == 'win':
+      payout = self.rules[wager_type]['payout']
+      return (payout * wager) + wager
+    else:
+      return -wager
+    
+  def play(self,wager):
+    wager_type = random.choices(list(self.rules.keys()),[self.rules[x]['freq_of_bet'] for x in self.rules.keys()])[0]
+    win_loss = self._get_win_loss(wager_type)
+    payout = self._get_payout(wager,wager_type,win_loss)
+    return {'game_type': 'roulette', 'wager': wager, 'wager_type': wager_type, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
+
+###
+class Slots:
+  def __init__(self):
+    pass
+  
+  def _get_win_loss(self):
+    return random.choices(['win','loss'],[0.26,0.74])[0]
+  
+  def _get_payout(self,wager,win_loss):
+      if win_loss == 'win':
+        multiplier = random.choices([1,2,3,4,5,6,7],[0.01,0.02,0.02,0.20,0.20,0.35,0.20])[0]
+        return (multiplier * wager) + wager
+      else:
+        return -wager
+  
+  def play(self, wager):
+    win_loss = self._get_win_loss()
+    payout = self._get_payout(wager,win_loss)
+    return {'game_type': 'slots', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
+
+###
+class VideoPoker:
+  def __init__(self):
+    self.rules = {
+      "royal_flush": {"win_prob": 0.002, "payout": 500},
+      "straight_flush": {"win_prob": 0.002, "payout": 50},
+      "four_of_a_kind": {"win_prob": 0.003, "payout": 25},
+      "full_house": {"win_prob": 0.003, "payout": 9},
+      "flush": {"win_prob": 0.01, "payout": 6},
+      "straight": {"win_prob": 0.01, "payout": 4},
+      "three_of_a_kind": {"win_prob": 0.07, "payout": 3},
+      "two_pair": {"win_prob": 0.13, "payout": 2},
+      "jacks_or_better": {"win_prob": 0.22, "payout": 1},
+      "other": {"win_prob": 0.55, "payout": 0},
+    }
+  
+  def _get_win_loss(self,hand_type):
+    return 'lose' if hand_type == 'other' else 'win'
+  
+  def _get_payout(self,wager,wager_type,win_loss):
+    if win_loss == 'win':
+      payout = self.rules[wager_type]['payout']
+      return (payout * wager) + wager
+    else:
+      return -wager
+    
+  def play(self,wager):
+    hand_type = random.choices(list(self.rules.keys()),[self.rules[x]['win_prob'] for x in self.rules.keys()])[0]
+    win_loss = self._get_win_loss(hand_type)
+    payout = self._get_payout(wager,hand_type,win_loss)
+    return {'game_type': 'video poker', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
 
 # COMMAND ----------
 
-# !!! Uncomment me to do full refresh
-# dbutils.fs.rm('dbfs:/databricks_solacc/real_money_gaming/data/raw', True)
-dbutils.fs.mkdirs('dbfs:/databricks_solacc/real_money_gaming/data/raw')
+# DUMMY CLASSES
+
+class Baccarat:
+  def __init__(self):
+    pass
+  
+  def play(self,wager):
+    win_loss = 'win'
+    payout = -1
+    return {'game_type': 'baccarat', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
+  
+class Craps:
+  def __init__(self):
+    pass
+  
+  def play(self,wager):
+    win_loss = 'win'
+    payout = -1
+    return {'game_type': 'craps', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
+
+class SportsBetting:
+  def __init__(self):
+    pass
+  
+  def play(self,wager):
+    win_loss = 'win'
+    payout = -1
+    return {'game_type': 'sports betting', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
 
 # COMMAND ----------
 
-customerCounter = 0
+num_customers = 100
+df = []
 
-for c in range(numCustomers):
-  file_name = uuid.uuid4()
+for p in range(num_customers):
+
+### CONSTRUCT PLAYER
+  customer_id = get_customer_id()
+  customer_segment = get_customer_segment()
+  age_band = get_age_band()
+  gender = get_gender()
+  registration_date = get_registration_date()
+  last_active_date = get_last_active_date(customer_segment)
+  flagged_high_risk = get_high_risk_flag(customer_segment)
+  balance = round(float(0),2)
+
+### GENERATE REGISTRATION BEACON AND APPEND TO DF ###
+  df.append(get_registration_beacon(customer_id, registration_date, age_band, gender))
   
-  with open("/dbfs/databricks_solacc/real_money_gaming/data/raw/{}".format(file_name), 'w') as f:
-    customerId = getCustomerId()
-    customerSegment = getCustomerSegment()
-    registrationDate = getRegistrationDate()
-    lastActiveDate = getLastActiveDate(customerSegment)
-    flaggedHighRisk = getHighRiskFlag(customerSegment) 
-    ageBand = getAgeBand() # maybe update to vary based on segment
-    gender = getGender()
+### GENERATE FLAGGED HIGH RISK BEACON AND APPEND TO DF ###
   
-  #### GENERATE AND WRITE REGISTRATION BEACONS ####
-  
-    registrationBeacon = getRegistrationBeacon(customerId, registrationDate, ageBand, gender)
-    f.writelines(registrationBeacon)
-  
-  #### GENERATE AND WRITE FLAGGED HIGH RISK BEACONS ####
-  
-    if flaggedHighRisk == 1:
-      flaggedHighRiskBeacon = getFlaggedHighRiskBeacon(customerId, lastActiveDate)
-      f.writelines(flaggedHighRiskBeacon)
-  
-  #### ITERATE THROUGH CUSTOMER LIFECYCLE DAYS ####
-  
-    for date in getListOfDays(registrationDate,lastActiveDate): #list of days between registration and last active
-      isActiveDay = getIsActiveDayFlag(customerSegment)
+  if flagged_high_risk == 1:
+    flagged_high_risk_beacon = get_flagged_high_risk_beacon(customer_id, last_active_date)
+    df.append(flagged_high_risk_beacon)
+
+### PLACE BETS  
+  list_of_active_days = get_list_of_active_days(customer_segment, registration_date, last_active_date)
+  for date in list_of_active_days:
+    date = date
+    date_transaction_id = 0
     
-      if isActiveDay == 1:
-        numBets = getNumDailyBets(customerSegment)
-        isWithdrawalDay = getIsWithdrawalDay(customerSegment)
-        isDepositDay = getIsDepositDay(customerSegment)
-  
-  #### GENERATE AND WRITE BET BEACONS FOR A GIVEN DAY ####
+    # Instantiate new tables each active day (Baccarat, Blackjack, Craps, Roulette, Sports Betting, Slots, Video Poker)
+    b = Blackjack()
+    r = Roulette()
+    s = Slots()
+    v = VideoPoker()
+    ba = Baccarat()
+    c = Craps()
+    sb = SportsBetting()
+    game_dict = {'Baccarat': ba,'Blackjack': b, 'Craps': c, 'Roulette': r, 'Slots': s, 'Sports Betting': sb, 'Video Poker': v}
     
-        for betNum in range(numBets):
-          dateBetNum = betNum + 1
-          bet = getBet(customerSegment)
-          betBeacon = getBetBeacon(customerId, date, dateBetNum, bet)
-          f.writelines(betBeacon)
-  
-  #### GENERATE WITHDRAWAL BEACONS FOR A GIVEN DAY ####
-        if isWithdrawalDay == 1:
-          withdrawalAmount = getWithdrawalAmount(customerSegment)
-          withdrawalBeacon = getWithdrawalBeacon(customerId,date,withdrawalAmount)
-          f.writelines(withdrawalBeacon)
-  
-  #### GENERATE DEPOSIT BEACONS FOR A GIVEN DAY ####
-        if isDepositDay == 1:
-          depositAmount = getDepositAmount(customerSegment)
-          depositBeacon = getDepositBeacon(customerId,date,depositAmount)
-          f.writelines(depositBeacon)
-  
-  #### INCREMENT AND PRINT COUNTER
-    customerCounter +=1
-    if customerCounter % 100 == 0:
-      print("Completed {} customers".format(customerCounter))
+    # Get list of game type bets for the day
+    bets_list = get_daily_bets_by_game_type(customer_segment)
+    
+    for game in bets_list:
+
+      if game in game_dict.keys():
+        g = game_dict[game] # grabs the game object instantiated above
+        wager = get_bet_wager(customer_segment)
+        
+        # Make sure player has $ to bet
+        while wager > balance:
+          date_transaction_id += 1
+          initial_balance = round(balance,2)
+          deposit_amount = get_deposit_amount(customer_segment)
+          balance += deposit_amount
+          # GENERATE DEPOSIT BEACON AND APPEND TO DF
+          df.append(get_deposit_beacon(customer_id, date,date_transaction_id, deposit_amount, initial_balance, balance))
+        
+        # Play the game
+        date_transaction_id += 1
+        initial_balance = round(balance,2)
+        outcome = g.play(wager)
+        balance += outcome['win_loss_amount']
+        ending_balance = round(balance,2)
+    
+    # GENERATE BET BEACON AND APPEND TO DF
+        bet_beacon = get_bet_beacon(
+          customer_id,
+          date,
+          date_transaction_id,
+          outcome['game_type'],
+          outcome['wager'],
+          outcome['win_loss'],
+          outcome['win_loss_amount'],
+          initial_balance,
+          ending_balance)
+        df.append(bet_beacon)
+      
+      if game == 'done':
+        is_withdrawal = get_is_withdrawal_day(customer_segment)
+        if is_withdrawal & (balance > 5):
+          date_transaction_id += 1
+          initial_balance = round(balance,2)
+          withdrawal_amount = round(-balance,2)
+          balance += withdrawal_amount
+          df.append(get_withdrawal_beacon(customer_id, date, date_transaction_id,withdrawal_amount, initial_balance, balance))
 
 # COMMAND ----------
 
 # MAGIC %md
-# MAGIC ### Checks
+# MAGIC ##### Create Dataframe
 
 # COMMAND ----------
 
-dbutils.fs.ls('dbfs:/databricks_solacc/real_money_gaming/data/raw')
+schema = 'customer_id STRING, age_band STRING, gender STRING, date STRING, date_transaction_id INT, event_type STRING, game_type STRING, wager_amount FLOAT, win_loss STRING, win_loss_amount FLOAT, initial_balance FLOAT, ending_balance FLOAT, withdrawal_amount FLOAT, deposit_amount FLOAT'
 
 # COMMAND ----------
 
-display(spark.read.json('dbfs:/databricks_solacc/real_money_gaming/data/raw'))
+df = spark.createDataFrame(df,schema=schema).sort('customer_id','date','date_transaction_id')
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC ##### Display Dataframe
+
+# COMMAND ----------
+
+display(df)
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC Write data out to storage
+
+# COMMAND ----------
+
+#dbutils.fs.rm('dbfs:/databricks_solacc/real_money_gaming/data/raw', True)
+
+# COMMAND ----------
+
+#dbutils.fs.mkdirs('dbfs:/databricks_solacc/real_money_gaming/data/raw')
+
+# COMMAND ----------
+
+df.write.csv('dbfs:/databricks_solacc/real_money_gaming/data/raw/rmg_data_{}.csv'.format(fake.uuid4))
+
+# COMMAND ----------
+
+from pyspark.sql.functions import col
+
+# COMMAND ----------
+
+display(spark.read.csv('dbfs:/databricks_solacc/real_money_gaming/data/raw/rmg_data_*.csv',schema=schema).filter(col('event_type') == 'flagged_high_risk'))
+
+# COMMAND ----------
+
+
