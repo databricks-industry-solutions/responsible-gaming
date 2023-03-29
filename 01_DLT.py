@@ -68,7 +68,7 @@ schema = 'customer_id STRING, age_band STRING, gender STRING, date STRING, date_
 @dlt.table
 def bronze_clickstream():
   raw_data_path = f'{data_path}/raw/*'
-  return spark.read.csv(raw_data_path,schema=schema)
+  return spark.read.json(raw_data_path,schema=schema)
 
 # COMMAND ----------
 
