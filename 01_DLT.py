@@ -103,11 +103,11 @@ def silver_deposits():
 
 # COMMAND ----------
 
-# DBTITLE 1,silver_flaggedHighRisk
+# DBTITLE 1,silver_flagged_high_risk
 @dlt.table
 def silver_flagged_high_risk():
   return (dlt.read("bronze_clickstream").select('customer_id', 'date','event_type')
-         .filter(col('event_type') == 'flaggedHighRisk'))
+         .filter(col('event_type') == 'flagged_high_risk'))
 
 # COMMAND ----------
 

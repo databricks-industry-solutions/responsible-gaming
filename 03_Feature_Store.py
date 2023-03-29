@@ -27,14 +27,14 @@
 # MAGIC 
 # MAGIC <img src='https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-5.png' width='700' style="float: right">
 # MAGIC 
-# MAGIC Many of the customer features that are useful for managing responisble gaming are useful for other use cases as well, such as predicting propensity to churn and personalizating marketing communications.
+# MAGIC Many of the customer features that are useful for managing responsible gaming are useful for other use cases as well, such as predicting propensity to churn and personalizating marketing communications.
 # MAGIC 
 # MAGIC This reusability makes customer features a prime candidate for a feature store table. 
 # MAGIC 
 # MAGIC In this step, we will create a customer_features table containing the following:
 # MAGIC * **Demographic information** such as age band and gender.
 # MAGIC * **Account activity** such as registration, deposits, and withdrawals.
-# MAGIC * **Betting activity** such as game type, wager, theoretical loss, and so on.
+# MAGIC * **Betting activity** such as game type, wager, wins and losses, and so on.
 
 # COMMAND ----------
 
@@ -46,7 +46,7 @@ from databricks.feature_store import FeatureLookup
 # COMMAND ----------
 
 # DBTITLE 1,Load tables to compute customer features
-registrations_df = spark.table('silver_registrations').select('customerId','gender','ageBand')
+registrations_df = spark.table('silver_registrations').select('customer_id','gender','age_band')
 daily_activity_df = spark.table('gold_daily_activity')
 bets_df = spark.table('silver_bets')
 
@@ -73,38 +73,49 @@ display(spark.table('silver_bets'))
 # COMMAND ----------
 
 # DBTITLE 1,Define customer features
+from pyspark.sql.functions import when
+
 def compute_features(registrations_df,bets_df,daily_activity_df):
   # Compute aggregate metrics for each customer
-  activity_agg_df = (daily_activity_df.groupBy('customerId').agg(count('date').alias('activeBettingDays'),
-        sum('numBets').alias('totalNumOfBets'),
-        round(mean('numBets'),2).alias('avgDailyBets'),
-        sum('totalWagered').alias('totalWageredAmt'),
-        round(mean('totalWagered'),2).alias('avgDailyWager'),
-        sum('numDeposits').alias('activeDepositDays'),
-        round(sum('totalDepositAmt'),2).alias('totalDepositAmt'),
-        sum('numWithdrawals').alias('activeWithdrawalDays'),
-        round(sum('totalWithdrawalAmt'),2).alias('totalWithdrawalAmt'),
-        min('date').alias('registrationDate'),
-        max('date').alias('lastActiveDate'),                                                         
-        sum('isHighRisk').alias('isHighRisk'))
-  .withColumn('depositFreq',round(col('activeDepositDays')/col('activeBettingDays'),2))
-  .withColumn('withdrawalFreq',round(col('activeWithdrawalDays')/col('activeBettingDays'),2))
-  .withColumn('lifetimeDays',datediff(col('lastActiveDate'),col('registrationDate')))
-  .withColumn('activeBettingDaysFreq',round(col('activeBettingDays')/col('lifetimeDays'),2)))
+  activity_agg_df = (daily_activity_df.groupBy('customer_id').agg(count('date').alias('active_betting_days'),
+       sum('num_bets').alias('total_num_of_bets'),
+       round(mean('num_bets'),2).alias('avg_daily_bets'),
+       sum('total_wagered').alias('total_wagered_amt'),
+       round(mean('total_wagered'),2).alias('avg_daily_wager'),
+       sum('winnings_losses').alias('total_win_loss_amount'),
+       sum(when(col('winnings_losses') > 0,1).otherwise(0)).alias('total_num_of_wins'),
+       sum('num_deposits').alias('total_num_of_deposits'),
+       sum(when(col('num_deposits') > 0,1).otherwise(0)).alias('active_deposit_days'),                                                        
+       round(sum('total_deposit_amt'),2).alias('total_deposit_amt'),
+       sum('num_withdrawals').alias('total_num_of_withdrawals'),
+       sum(when(col('num_withdrawals') > 0,1).otherwise(0)).alias('active_withdrawal_days'), 
+       round(sum('total_withdrawal_amt'),2).alias('total_withdrawal_amt'),
+       min('date').alias('registration_date'),
+       max('date').alias('last_active_date'),                                                         
+       sum('is_high_risk').alias('is_high_risk'))
+       .withColumn('win_rate',round(col('total_num_of_wins')/col('total_num_of_bets'),2))
+       .withColumn('deposit_freq',round(col('active_deposit_days')/col('active_betting_days'),2))
+       .withColumn('withdrawal_freq',round(col('active_withdrawal_days')/col('active_betting_days'),2))
+       .withColumn('lifetime_days',datediff(col('last_active_date'),col('registration_date')))
+       .withColumn('active_betting_days_freq',round(col('active_betting_days')/col('lifetime_days'),2)))
   
   # Compute proportion of bets and wagers for Sports Betting
-  sports_agg_df = (bets_df.groupBy('customerId','gameType').agg(count('wager').alias('numBets'),
-        sum('wager').alias('totalWager')).filter(col('gameType') == 'Sports Betting').drop('gameType')
-       .withColumnRenamed('numBets','sportsNumBets').withColumnRenamed('totalWager','sportsTotalWager'))
+  sports_agg_df = (bets_df.groupBy('customer_id','game_type')
+       .agg(count('wager_amount').alias('num_bets'), sum('wager_amount').alias('total_wager'), 
+          sum('win_loss_amount').alias('sports_total_win_loss_amt'),
+          sum(when(col('win_loss') == 'win',1).otherwise(0)).alias('sports_wins')                                         )
+       .filter(col('game_type') == 'sports betting').drop('game_type')
+       .withColumnRenamed('num_bets','sports_num_bets').withColumnRenamed('total_wager','sports_total_wagered')
+       .withColumn('sports_win_rate',round(col('sports_wins')/col('sports_num_bets'),2)))
   
   # Join the three tables and add additional proportion of bets/wagers columns for sports and casino
-  agg_df = (registrations_df.join(activity_agg_df,on='customerId',how='leftouter').join(sports_agg_df,on='customerId',how='leftouter')
-       .withColumn('sportsPctOfBets',round(col('sportsNumBets')/col('totalNumOfBets'),2))
-       .withColumn('sportsPctOfWagers',round(col('sportsTotalWager')/col('totalWageredAmt'),2))
-       .withColumn('casinoNumOfBets',(col('totalNumOfBets')-col('sportsNumBets')))
-       .withColumn('casinoTotalWager',(col('totalWageredAmt')-col('sportsTotalWager')))
-       .withColumn('casinoPctOfBets',round(col('casinoNumOfBets')/col('totalNumOfBets'),2))
-       .withColumn('casinoPctOfWagers',round(col('casinoTotalWager')/col('totalWageredAmt'),2)).na.fill(0))
+  agg_df = (registrations_df.join(activity_agg_df,on='customer_id',how='leftouter').join(sports_agg_df,on='customer_id',how='leftouter')
+       .withColumn('sports_pct_of_bets',round(col('sports_num_bets')/col('total_num_of_bets'),2))
+       .withColumn('sports_pct_of_wagers',round(col('sports_total_wagered')/col('total_wagered_amt'),2))
+       .withColumn('casino_num_of_bets',(col('total_num_of_bets')-col('sports_num_bets')))
+       .withColumn('casino_total_wagered',(col('total_wagered_amt')-col('sports_total_wagered')))
+       .withColumn('casino_pct_of_bets',round(col('casino_num_of_bets')/col('total_num_of_bets'),2))
+       .withColumn('casino_pct_of_wagers',round(col('casino_total_wagered')/col('total_wagered_amt'),2)).na.fill(0))
   
   return agg_df
 
@@ -137,7 +148,7 @@ fs.create_table(
   name=f"{config['database']}.customer_features",
   description="Customer demographics and activity features",
   tags={"hasPII":"False"},
-  primary_keys=["customerId"],
+  primary_keys=["customer_id"],
   df=customer_features)
 
 # COMMAND ----------

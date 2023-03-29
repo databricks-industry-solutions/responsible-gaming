@@ -39,11 +39,11 @@ fake = Faker()
 
 customer_segments_df = pd.DataFrame(
   {'segment': ['A','B','C','D','E'],
-   'segment_weight': [0.09, 0.16, 0.15, 0.20, 0.40]})
+   'segment_weight': [0.01, 0.18, 0.17, 0.22, 0.42]}) #[0.09, 0.16, 0.15, 0.20, 0.40]
 
 high_risk_prob_df = pd.DataFrame(
   {'segment': ['A','B','C','D','E'],
-   'segment_weight': [0.19, 0.06, 0.10, 0.09, 0.01]})
+   'segment_weight': [0.99, 0.0025, 0.0025, 0.0025, 0.0025]})  #[0.19, 0.06, 0.10, 0.09, 0.01]
 
 age_band_df = pd.DataFrame(
   {'age_band': ['18-24', '25-34', '35-44', '45-54', '55-65', '65+'],
@@ -61,7 +61,7 @@ sports_bet_prob_df = pd.DataFrame(
   {'segment': ['A','B','C','D','E'],
    'sports_bet_prob': [0.43, 0.03, 0.82, 0.91, 0.35]})
 
-non_sports_games = ['Roulette','Video Poker', 'Slots', 'Baccarat','Blackjack', 'Craps']
+non_sports_games = ['Roulette','Video Poker', 'Slots', 'Baccarat','Blackjack'] # TO DO: Add Craps
 
 daily_bets_max_df = pd.DataFrame(
    {'segment': ['A','B','C','D','E'],
@@ -300,6 +300,39 @@ def getWithdrawalAmount(customer_segment):
 ########################################
 # Games
 ########################################
+
+class Baccarat:
+  def __init__(self):
+    self.rules = {
+      "banker_bet": {"freq_of_bet": 0.25, "win_prob": 0.4586, "payout": 0.95},
+      "player_bet": {"freq_of_bet": 0.30, "win_prob": 0.4462, "payout": 1},
+      "tie_bet": {"freq_of_bet": 0.32, "win_prob": 0.0952, "payout": 8},
+      "player_pair": {"freq_of_bet": 0.02, "win_prob": 0.0747, "payout": 11},
+      "banker_pair": {"freq_of_bet": 0.03, "win_prob": 0.0747, "payout": 11},
+      "perfect_pair": {"freq_of_bet": 0.03, "win_prob": 0.034, "payout": 25},
+      "either_pair": {"freq_of_bet": 0.02, "win_prob": 0.142, "payout": 5},
+      "big": {"freq_of_bet": 0.02, "win_prob": 0.318 , "payout": 2},
+      "small": {"freq_of_bet": 0.01, "win_prob": 0.378 , "payout": 1.5},
+    }
+  
+  def _get_win_loss(self,wager_type):
+    win_prob = self.rules[wager_type]['win_prob']
+    return random.choices(['win','loss'],[win_prob,1-win_prob])[0]
+  
+  def _get_payout(self,wager,wager_type,win_loss):
+    if win_loss == 'win':
+      payout = self.rules[wager_type]['payout']
+      return (payout * wager) + wager
+    else:
+      return -wager
+
+  def play(self,wager):
+    wager_type = random.choices(list(self.rules.keys()),[self.rules[x]['freq_of_bet'] for x in self.rules.keys()])[0]
+    win_loss = self._get_win_loss(wager_type)
+    payout = self._get_payout(wager,wager_type,win_loss)
+    return {'game_type': 'baccarat', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
+  
+###
 class Blackjack:
   def __init__(self):
     pass
@@ -381,6 +414,36 @@ class Slots:
     return {'game_type': 'slots', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
 
 ###
+class SportsBetting:
+  # Currently limited to moneyline bets
+  def __init__(self):
+    self.rules = {"-100":  {"freq_of_bet": 0.07, "win_prob": 0.50, "payout": 1},
+                  "-200":  {"freq_of_bet": 0.26, "win_prob": 0.667, "payout": 2},
+                  "-300":  {"freq_of_bet": 0.13, "win_prob": 0.75, "payout": 3},
+                  "-400":  {"freq_of_bet": 0.06, "win_prob": 0.80, "payout": 4},
+                  "+100":  {"freq_of_bet": 0.08, "win_prob": 0.50, "payout": 1},
+                  "+200":  {"freq_of_bet": 0.24, "win_prob": 0.33, "payout": 2},
+                  "+300":  {"freq_of_bet": 0.12, "win_prob": 0.25, "payout": 3},
+                  "+400":  {"freq_of_bet": 0.04, "win_prob": 0.20, "payout": 4}}
+  
+  def _get_win_loss(self,wager_type):
+    win_prob = self.rules[wager_type]['win_prob']
+    return random.choices(['win','loss'],[win_prob,1-win_prob])[0]
+  
+  def _get_payout(self,wager,wager_type,win_loss):
+    if win_loss == 'win':
+      payout = self.rules[wager_type]['payout']
+      return (payout * wager) + wager
+    else:
+      return -wager
+
+  def play(self,wager):
+    wager_type = random.choices(list(self.rules.keys()),[self.rules[x]['freq_of_bet'] for x in self.rules.keys()])[0]
+    win_loss = self._get_win_loss(wager_type)
+    payout = self._get_payout(wager,wager_type,win_loss)
+    return {'game_type': 'sports betting', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
+  
+###
 class VideoPoker:
   def __init__(self):
     self.rules = {
@@ -397,7 +460,7 @@ class VideoPoker:
     }
   
   def _get_win_loss(self,hand_type):
-    return 'lose' if hand_type == 'other' else 'win'
+    return 'loss' if hand_type == 'other' else 'win'
   
   def _get_payout(self,wager,wager_type,win_loss):
     if win_loss == 'win':
@@ -416,15 +479,6 @@ class VideoPoker:
 
 # DUMMY CLASSES
 
-class Baccarat:
-  def __init__(self):
-    pass
-  
-  def play(self,wager):
-    win_loss = 'win'
-    payout = -1
-    return {'game_type': 'baccarat', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
-  
 class Craps:
   def __init__(self):
     pass
@@ -433,15 +487,6 @@ class Craps:
     win_loss = 'win'
     payout = -1
     return {'game_type': 'craps', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
-
-class SportsBetting:
-  def __init__(self):
-    pass
-  
-  def play(self,wager):
-    win_loss = 'win'
-    payout = -1
-    return {'game_type': 'sports betting', 'wager': wager, 'win_loss': win_loss, 'win_loss_amount': float(payout)}
 
 # COMMAND ----------
 
@@ -481,9 +526,9 @@ for p in range(num_customers):
     s = Slots()
     v = VideoPoker()
     ba = Baccarat()
-    c = Craps()
+    #c = Craps()
     sb = SportsBetting()
-    game_dict = {'Baccarat': ba,'Blackjack': b, 'Craps': c, 'Roulette': r, 'Slots': s, 'Sports Betting': sb, 'Video Poker': v}
+    game_dict = {'Baccarat': ba,'Blackjack': b, 'Roulette': r, 'Slots': s, 'Sports Betting': sb, 'Video Poker': v}
     
     # Get list of game type bets for the day
     bets_list = get_daily_bets_by_game_type(customer_segment)

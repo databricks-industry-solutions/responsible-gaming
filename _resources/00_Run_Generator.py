@@ -2,7 +2,7 @@
 from multiprocessing.pool import ThreadPool
 
 # Input parameters
-num_threads = 20
+num_threads = 40
 notebook_name = './00_Generator'
 timeout_seconds = 60000
 
