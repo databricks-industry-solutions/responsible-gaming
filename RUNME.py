@@ -69,9 +69,13 @@ pipeline_json = {
 
 # COMMAND ----------
 
-spark.sql(f"CREATE DATABASE IF NOT EXISTS databricks_solacc LOCATION '/databricks_solacc/'")
-spark.sql(f"CREATE TABLE IF NOT EXISTS databricks_solacc.dlt (path STRING, pipeline_id STRING, solacc STRING)")
-dlt_config_table = "databricks_solacc.dlt"
+solacc_config_database = "databricks_solacc"
+dlt_config_table = f"{solacc_config_database}.dlt"
+dbsql_config_table = f"{solacc_config_database}.dbsql"
+
+spark.sql(f"CREATE DATABASE IF NOT EXISTS {solacc_config_database} LOCATION '/databricks_solacc/'")
+spark.sql(f"CREATE TABLE IF NOT EXISTS {dlt_config_table} (path STRING, pipeline_id STRING, solacc STRING)")
+spark.sql(f"CREATE TABLE IF NOT EXISTS {dbsql_config_table} (path STRING, id STRING, solacc STRING)")
 
 # COMMAND ----------
 
@@ -173,7 +177,7 @@ dbutils.widgets.dropdown("run_job", "False", ["True", "False"])
 run_job = dbutils.widgets.get("run_job") == "True"
 nsc = NotebookSolutionCompanion()
 nsc.deploy_compute(job_json, run_job=run_job)
-nsc.deploy_dbsql("./RMG_Dashboard.dbdash")
+nsc.deploy_dbsql("./RMG_Dashboard.dbdash", dbsql_config_table, spark)
 
 # COMMAND ----------
 
