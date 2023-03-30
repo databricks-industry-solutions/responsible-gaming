@@ -157,7 +157,7 @@ job_json = {
             {
                 "job_cluster_key": "rmg_cluster",
                 "new_cluster": {
-                    "spark_version": "11.1.x-cpu-ml-scala2.12",
+                    "spark_version": "11.3.x-cpu-ml-scala2.12",
                 "spark_conf": {
                     "spark.databricks.delta.formatCheck.enabled": "false"
                     },
