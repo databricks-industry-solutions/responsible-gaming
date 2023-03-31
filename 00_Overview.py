@@ -24,21 +24,3 @@ displayHTML(f'''<div style="width:1150px; margin:auto"><iframe src="https://docs
 # COMMAND ----------
 
 config
-
-# COMMAND ----------
-
-# DBTITLE 1,Initialize source data if it does not exist
-# first let's write a simple util to check if the path exists
-def path_exists(path):
-  try:
-    dbutils.fs.ls(path)
-    return True
-  except Exception as e:
-    if 'java.io.FileNotFoundException' in str(e):
-      return False
-    else:
-      raise
-
-# We skip moving the data if the path exists and is not empty, assuming that the file copying has been done in the past
-if not path_exists(f"{config['data_path']}/raw") or len(dbutils.fs.ls(f"{config['data_path']}/raw")) == 0: # if the raw data folder does not exist, or the folder is empty
-  dbutils.fs.cp("s3a://db-gtm-industry-solutions/data/CME/real_money_gaming/data/raw", f"{config['data_path']}/raw", True)

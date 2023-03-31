@@ -48,22 +48,22 @@ mlflow.autolog()
 # DBTITLE 1,Create a training dataset from Feature Store
 fs = FeatureStoreClient()
 
-cust_features_df = fs.read_table(name=f"{config['database']}.customer_features").select('customerId','isHighRisk')
+cust_features_df = fs.read_table(name=f"{config['database']}.customer_features").select('customer_id','is_high_risk')
 
 feature_lookups = [
   FeatureLookup(
     table_name = f"{config['database']}.customer_features",
-    feature_names = ['activeBettingDaysFreq','avgDailyBets','avgDailyWager','depositFreq','totalDepositAmt',
-                     'withdrawalFreq', 'totalWithdrawalAmt', 'sportsPctOfBets','sportsPctOfWagers'],
-    lookup_key = ["customerId"]
+    feature_names = ['active_betting_days_freq','avg_daily_bets','avg_daily_wager','deposit_freq','total_deposit_amt',
+                     'withdrawal_freq', 'total_withdrawal_amt', 'sports_pct_of_bets','sports_pct_of_wagers','win_rate'],
+    lookup_key = ["customer_id"]
   )
 ]
   
 training_set = fs.create_training_set(
   df=cust_features_df,
   feature_lookups = feature_lookups,
-  exclude_columns=['customerId'],
-  label = "isHighRisk"
+  exclude_columns=['customer_id'],
+  label = "is_high_risk"
 )
 
 training_df = training_set.load_df()
@@ -72,9 +72,9 @@ display(training_df)
 # COMMAND ----------
 
 # DBTITLE 1,Create train and test data sets
-features = [i for i in training_df.columns if (i != 'customerId') & (i != 'isHighRisk')]
+features = [i for i in training_df.columns if (i != 'customer_id') & (i != 'is_high_risk')]
 df = training_df.toPandas()
-X_train, X_test, y_train, y_test = train_test_split(df[features], df['isHighRisk'], test_size=0.33, random_state=55)
+X_train, X_test, y_train, y_test = train_test_split(df[features], df['is_high_risk'], test_size=0.33, random_state=55)
 
 # COMMAND ----------
 
@@ -84,6 +84,8 @@ X_train, X_test, y_train, y_test = train_test_split(df[features], df['isHighRisk
 # COMMAND ----------
 
 # DBTITLE 1,Define model evaluation for hyperopt
+from sklearn.metrics import recall_score
+
 def evaluate_model(params):
   #instantiate model
   model = XGBClassifier(learning_rate=params["learning_rate"],
@@ -97,13 +99,15 @@ def evaluate_model(params):
                             early_stopping_rounds=50)
   
   #train
-  model.fit(X_train, y_train)
+  
+  model.fit(X_train, y_train, eval_set=[(X_test, y_test)])
   
   #predict
   y_prob = model.predict_proba(X_test)
   
   #score
   precision = average_precision_score(y_test, y_prob[:,1])
+  
   mlflow.log_metric('avg_precision', precision)  # record actual metric with mlflow run
   
   # return results (negative precision as we minimize the function)
@@ -131,7 +135,7 @@ with mlflow.start_run(run_name='XGBClassifier') as run:
   argmin = (fmin(fn=evaluate_model, 
                  space=search_space, 
                  algo=tpe.suggest, 
-                 max_evals=20, 
+                 max_evals=100, 
                  trials=trials))
   
   # Identify the best trial
@@ -150,8 +154,7 @@ with mlflow.start_run(run_name='XGBClassifier') as run:
   #Log hyperopt model params and our loss metric
   for p in argmin:
     mlflow.log_param(p, argmin[p])
-  
-  mlflow.log_metric("avg_precision", trials.best_trial['result']['loss'])
+    mlflow.log_metric("precision", trials.best_trial['result']['loss'])
   
   # Capture the run_id to use when registring our model
   run_id = run.info.run_id
@@ -206,7 +209,7 @@ client.transition_model_version_stage(name = "rmg_high_risk_classifier", version
 # COMMAND ----------
 
 # DBTITLE 1,Read data in from Feature Store
-batch_df = fs.read_table(name=f"{config['database']}.customer_features").select('customerId')
+batch_df = fs.read_table(name=f"{config['database']}.customer_features").select('customer_id')
 
 # COMMAND ----------
 

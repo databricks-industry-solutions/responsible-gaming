@@ -36,10 +36,11 @@
 
 # COMMAND ----------
 
-# MAGIC %md
-# MAGIC ### Step 2.2: Databricks SQL
-# MAGIC * See dashboard created in the **RUNME** notebook
+# MAGIC %sql
+# MAGIC select * from silver_withdrawals
 
 # COMMAND ----------
 
-
+# MAGIC %md
+# MAGIC ### Step 2.2: Databricks SQL
+# MAGIC * See dashboard created in the **RUNME** notebook
