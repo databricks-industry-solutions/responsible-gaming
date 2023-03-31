@@ -65,10 +65,10 @@ schema = 'customer_id STRING, age_band STRING, gender STRING, date STRING, date_
 # COMMAND ----------
 
 # DBTITLE 1,bronze_clickstream
-@dlt.table
+@dlt.view
 def bronze_clickstream():
-  raw_data_path = f'{data_path}/raw/*'
-  return spark.read.json(raw_data_path,schema=schema)
+  raw_data_path = f's3a://db-gtm-industry-solutions/data/CME/real_money_gaming/data/raw/*'
+  return spark.read.csv(raw_data_path,schema=schema)
 
 # COMMAND ----------
 
@@ -158,8 +158,3 @@ def gold_daily_activity():
 
   return (daily_betting_activity.join(daily_deposits,on=['customer_id','date'],how='outer')
           .join(daily_withdrawals,on=['customer_id','date'],how='outer').join(daily_high_risk_flags,on=['customer_id', 'date'],how='outer').na.fill(0))
-
-# COMMAND ----------
-
-# MAGIC %sql
-# MAGIC select * from SOLACC_real_money_gaming.gold_daily_activity
