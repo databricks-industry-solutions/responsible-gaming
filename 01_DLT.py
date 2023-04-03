@@ -65,7 +65,7 @@ schema = 'customer_id STRING, age_band STRING, gender STRING, date STRING, date_
 # COMMAND ----------
 
 # DBTITLE 1,bronze_clickstream
-@dlt.view
+@dlt.table
 def bronze_clickstream():
   raw_data_path = f's3a://db-gtm-industry-solutions/data/CME/real_money_gaming/data/raw/*'
   return spark.read.csv(raw_data_path,schema=schema)
