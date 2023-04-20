@@ -56,10 +56,6 @@ import dlt
 
 # COMMAND ----------
 
-data_path = 'dbfs:/databricks_solacc/real_money_gaming/data'
-
-# COMMAND ----------
-
 schema = 'customer_id STRING, age_band STRING, gender STRING, date STRING, date_transaction_id INT, event_type STRING, game_type STRING, wager_amount FLOAT, win_loss STRING, win_loss_amount FLOAT, initial_balance FLOAT, ending_balance FLOAT, withdrawal_amount FLOAT, deposit_amount FLOAT'
 
 # COMMAND ----------
