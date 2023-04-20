@@ -70,11 +70,9 @@ pipeline_json = {
 # COMMAND ----------
 
 solacc_config_database = "databricks_solacc"
-dlt_config_table = f"{solacc_config_database}.dlt"
 dbsql_config_table = f"{solacc_config_database}.dbsql"
 
 spark.sql(f"CREATE DATABASE IF NOT EXISTS {solacc_config_database} LOCATION '/databricks_solacc/'")
-spark.sql(f"CREATE TABLE IF NOT EXISTS {dlt_config_table} (path STRING, pipeline_id STRING, solacc STRING)")
 spark.sql(f"CREATE TABLE IF NOT EXISTS {dbsql_config_table} (path STRING, id STRING, solacc STRING)")
 
 # COMMAND ----------
@@ -92,23 +90,11 @@ job_json = {
         },
         "tasks": [
             {
-                "job_cluster_key": "rmg_cluster",
-                "notebook_task": {
-                    "notebook_path": f"00_Overview"
-                },
-                "task_key": "rmg_00"
-            },
-            {
                 "pipeline_task": {
                     "pipeline_id": pipeline_id
                 },
                 "task_key": "rmg_01",
-                "description": "",
-                "depends_on": [
-                    {
-                        "task_key": "rmg_00"
-                    }
-                ]
+                "description": ""
             },
           {
                 "job_cluster_key": "rmg_cluster",
