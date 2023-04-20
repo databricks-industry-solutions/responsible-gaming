@@ -77,7 +77,7 @@ spark.sql(f"CREATE TABLE IF NOT EXISTS {dbsql_config_table} (path STRING, id STR
 
 # COMMAND ----------
 
-pipeline_id = NotebookSolutionCompanion().deploy_pipeline(pipeline_json, dlt_config_table, spark)
+pipeline_id = NotebookSolutionCompanion().deploy_pipeline(pipeline_json, "", spark)
 
 # COMMAND ----------
 
