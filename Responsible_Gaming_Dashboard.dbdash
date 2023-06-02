@@ -1,21 +1,96 @@
 {
   "queries": [
     {
-      "id": "5a3d9254-6439-47b0-879d-3572d294f214",
-      "name": "(Clone) RMG: Retention Curve",
+      "id": "0017fb74-acd0-4aeb-8521-4c12a4af0f02",
+      "name": "(Clone) RMG: Number of Customers",
       "description": null,
-      "query": "\nselect month, (numCustomers/cohortCnt) as pct from (\nselect month(date) as month, (select count(distinct customerId) as cnt from dm_rmg.bronze_clickstream) as cohortCnt, count(distinct customerId) as numCustomers\nfrom SOLACC_real_money_gaming.bronze_clickstream\ngroup by month\norder by month asc)",
+      "query": "select count(customer_id)/1000 as numCustomers from SOLACC_real_money_gaming.silver_registrations",
       "options": {
-        "parent": "folders/1651724910874369",
+        "parent": "folders/4402048912220994",
         "apply_auto_limit": false,
         "folder_node_status": "ACTIVE",
-        "folder_node_internal_name": "tree/4360330468155089",
+        "folder_node_internal_name": "tree/4402048912220997",
         "visualization_control_order": [],
-        "parameters": []
+        "parameters": [],
+        "schema": null,
+        "catalog": null
       },
       "visualizations": [
         {
-          "id": "b46a868e-a174-485c-bc32-53c41bf50454",
+          "id": "c1e3830f-9d5e-4588-9558-0f77218b036a",
+          "type": "COUNTER",
+          "name": "Number of Customers",
+          "description": "",
+          "options": {
+            "counterLabel": "Customers",
+            "counterColName": "numCustomers",
+            "rowNumber": 1,
+            "targetRowNumber": 1,
+            "stringDecimal": 0,
+            "stringDecChar": ".",
+            "stringThouSep": ",",
+            "tooltipFormat": "0,0.000",
+            "stringSuffix": "K",
+            "formatTargetValue": false
+          },
+          "query_plan": null
+        }
+      ]
+    },
+    {
+      "id": "47e10a56-0cda-43ae-966f-6440c42a2f7a",
+      "name": "(Clone) RMG: High Risk",
+      "description": null,
+      "query": "select numCustomersFlagged/numCustomers as pctFlaggedHighRisk from (\nselect count(f.customer_id) as numCustomersFlagged, \n(select count(r.customer_id) from SOLACC_real_money_gaming.silver_registrations r) as numCustomers\nfrom SOLACC_real_money_gaming.silver_flagged_high_risk f)",
+      "options": {
+        "parent": "folders/4402048912220994",
+        "apply_auto_limit": false,
+        "folder_node_status": "ACTIVE",
+        "folder_node_internal_name": "tree/4402048912220999",
+        "visualization_control_order": [],
+        "parameters": [],
+        "schema": null,
+        "catalog": null
+      },
+      "visualizations": [
+        {
+          "id": "1374d473-0b9c-4449-a46c-33c7811a5bcb",
+          "type": "COUNTER",
+          "name": "High Risk",
+          "description": "",
+          "options": {
+            "counterLabel": "% High Risk",
+            "counterColName": "pctFlaggedHighRisk",
+            "rowNumber": 1,
+            "targetRowNumber": 1,
+            "stringDecimal": 2,
+            "stringDecChar": ".",
+            "stringThouSep": ",",
+            "tooltipFormat": "0,0.000",
+            "stringSuffix": "%"
+          },
+          "query_plan": null
+        }
+      ]
+    },
+    {
+      "id": "dbd09039-9d2e-4398-8965-8e4bfdfc5333",
+      "name": "(Clone) RMG: Retention Curve",
+      "description": null,
+      "query": "\nselect month, (numCustomers/cohortCnt) as pct from (\nselect month(date) as month, (select count(distinct customer_id) as cnt from SOLACC_real_money_gaming.bronze_clickstream) as cohortCnt, count(distinct customer_id) as numCustomers\nfrom SOLACC_real_money_gaming.bronze_clickstream\ngroup by month\norder by month asc)",
+      "options": {
+        "parent": "folders/4402048912220994",
+        "apply_auto_limit": false,
+        "folder_node_status": "ACTIVE",
+        "folder_node_internal_name": "tree/4402048912220996",
+        "visualization_control_order": [],
+        "parameters": [],
+        "schema": null,
+        "catalog": null
+      },
+      "visualizations": [
+        {
+          "id": "443418e6-9378-4147-bad9-4f0df1e101db",
           "type": "CHART",
           "name": "Cohort Analysis",
           "description": "",
@@ -120,56 +195,23 @@
       ]
     },
     {
-      "id": "9a7141b6-3552-42b3-a65d-7c1d75f65eed",
-      "name": "(Clone) RMG: Number of Customers",
-      "description": null,
-      "query": "select count(customerId)/1000 as numCustomers from SOLACC_real_money_gaming.silver_registrations",
-      "options": {
-        "parent": "folders/1651724910874369",
-        "apply_auto_limit": false,
-        "folder_node_status": "ACTIVE",
-        "folder_node_internal_name": "tree/4360330468155086",
-        "visualization_control_order": [],
-        "parameters": []
-      },
-      "visualizations": [
-        {
-          "id": "9fe9734c-0fdb-4929-a218-aa8f5707188c",
-          "type": "COUNTER",
-          "name": "Number of Customers",
-          "description": "",
-          "options": {
-            "counterLabel": "Customers",
-            "counterColName": "numCustomers",
-            "rowNumber": 1,
-            "targetRowNumber": 1,
-            "stringDecimal": 0,
-            "stringDecChar": ".",
-            "stringThouSep": ",",
-            "tooltipFormat": "0,0.000",
-            "stringSuffix": "K",
-            "formatTargetValue": false
-          },
-          "query_plan": null
-        }
-      ]
-    },
-    {
-      "id": "d3d48ffe-d86e-498a-bbe6-b0b2de77f93e",
+      "id": "ab124979-3283-4e7c-8aca-dceede6fbe87",
       "name": "(Clone) RMG: By Age",
       "description": null,
-      "query": "select gender, ageBand, count(customerId) as numCustomers \nfrom SOLACC_real_money_gaming.silver_registrations\ngroup by gender, ageBand",
+      "query": "select gender, age_band, count(customer_id) as numCustomers \nfrom SOLACC_real_money_gaming.silver_registrations\ngroup by gender, age_band",
       "options": {
-        "parent": "folders/1651724910874369",
+        "parent": "folders/4402048912220994",
         "apply_auto_limit": false,
         "folder_node_status": "ACTIVE",
-        "folder_node_internal_name": "tree/4360330468155088",
+        "folder_node_internal_name": "tree/4402048912220998",
         "visualization_control_order": [],
-        "parameters": []
+        "parameters": [],
+        "schema": null,
+        "catalog": null
       },
       "visualizations": [
         {
-          "id": "aea57196-b880-4104-bfda-9c078496ab15",
+          "id": "9d7b58b0-7e81-489c-b71d-2ed0536ae274",
           "type": "CHART",
           "name": "By Age",
           "description": "",
@@ -238,8 +280,8 @@
             "showDataLabels": false,
             "columnConfigurationMap": {
               "x": {
-                "column": "ageBand",
-                "id": "column_72f57dee9944"
+                "column": "age_band",
+                "id": "column_9fbdfbde6249"
               },
               "y": [
                 {
@@ -249,12 +291,14 @@
                 }
               ]
             },
-            "isAggregationOn": true
+            "isAggregationOn": true,
+            "condensed": true,
+            "withRowNumber": true
           },
           "query_plan": {
             "selects": [
               {
-                "column": "ageBand"
+                "column": "age_band"
               },
               {
                 "function": "SUM",
@@ -268,78 +312,20 @@
             ],
             "groups": [
               {
-                "column": "ageBand"
+                "column": "age_band"
               }
             ]
           }
         }
       ]
-    },
-    {
-      "id": "5e1e284f-e70a-4592-b90b-bf381185bc39",
-      "name": "(Clone) RMG: High Risk",
-      "description": null,
-      "query": "select numCustomersFlagged/numCustomers as pctFlaggedHighRisk from (\nselect count(f.customerId) as numCustomersFlagged, \n(select count(r.customerId) from dm_rmg.silver_registrations r) as numCustomers\nfrom SOLACC_real_money_gaming.silver_flaggedhighrisk f)",
-      "options": {
-        "parent": "folders/1651724910874369",
-        "apply_auto_limit": false,
-        "folder_node_status": "ACTIVE",
-        "folder_node_internal_name": "tree/4360330468155087",
-        "visualization_control_order": [],
-        "parameters": []
-      },
-      "visualizations": [
-        {
-          "id": "443c16d2-d44f-49d8-bb94-0de9969a03d5",
-          "type": "COUNTER",
-          "name": "High Risk",
-          "description": "",
-          "options": {
-            "counterLabel": "% High Risk",
-            "counterColName": "pctFlaggedHighRisk",
-            "rowNumber": 1,
-            "targetRowNumber": 1,
-            "stringDecimal": 2,
-            "stringDecChar": ".",
-            "stringThouSep": ",",
-            "tooltipFormat": "0,0.000",
-            "stringSuffix": "%"
-          },
-          "query_plan": null
-        }
-      ]
     }
   ],
   "dashboard": {
-    "id": "22506ff9-7031-4e06-bc2d-fd347570bf84",
-    "name": "RMG Dashboard",
+    "id": "9d1ab3fc-a740-4e2b-a8e8-f0288fbc9af4",
+    "name": "Responsible Gaming Dashboard",
     "widgets": [
       {
-        "id": "24d517ea-5922-4b75-8a40-ea25ae6c4646",
-        "width": 1,
-        "options": {
-          "parameterMappings": {},
-          "title": "By Age - RMG: By Age",
-          "description": "",
-          "isHidden": false,
-          "position": {
-            "autoHeight": false,
-            "sizeX": 2,
-            "sizeY": 5,
-            "minSizeX": 1,
-            "maxSizeX": 6,
-            "minSizeY": 5,
-            "maxSizeY": 1000,
-            "col": 2,
-            "row": 0
-          }
-        },
-        "dashboard_id": "22506ff9-7031-4e06-bc2d-fd347570bf84",
-        "text": "",
-        "visualization_id": "aea57196-b880-4104-bfda-9c078496ab15"
-      },
-      {
-        "id": "27966a6c-6163-44ea-bbd5-df59b2136395",
+        "id": "2420d7ce-6f58-4eab-bfec-9103f708e907",
         "width": 1,
         "options": {
           "parameterMappings": {},
@@ -359,37 +345,12 @@
           },
           "overrideColors": false
         },
-        "dashboard_id": "22506ff9-7031-4e06-bc2d-fd347570bf84",
+        "dashboard_id": "9d1ab3fc-a740-4e2b-a8e8-f0288fbc9af4",
         "text": "",
-        "visualization_id": "9fe9734c-0fdb-4929-a218-aa8f5707188c"
+        "visualization_id": "c1e3830f-9d5e-4588-9558-0f77218b036a"
       },
       {
-        "id": "69baa250-5aef-4127-816a-60e614447b78",
-        "width": 1,
-        "options": {
-          "parameterMappings": {},
-          "title": "Pct High Risk",
-          "description": "",
-          "isHidden": false,
-          "position": {
-            "autoHeight": false,
-            "sizeX": 1,
-            "sizeY": 5,
-            "minSizeX": 1,
-            "maxSizeX": 6,
-            "minSizeY": 1,
-            "maxSizeY": 1000,
-            "col": 1,
-            "row": 0
-          },
-          "overrideColors": false
-        },
-        "dashboard_id": "22506ff9-7031-4e06-bc2d-fd347570bf84",
-        "text": "",
-        "visualization_id": "443c16d2-d44f-49d8-bb94-0de9969a03d5"
-      },
-      {
-        "id": "4ef80e5a-0626-409b-84be-380ea68959c5",
+        "id": "a2c542e2-de99-4fde-ab2f-938641fff53c",
         "width": 1,
         "options": {
           "parameterMappings": {},
@@ -409,15 +370,65 @@
           },
           "overrideColors": false
         },
-        "dashboard_id": "22506ff9-7031-4e06-bc2d-fd347570bf84",
+        "dashboard_id": "9d1ab3fc-a740-4e2b-a8e8-f0288fbc9af4",
         "text": "",
-        "visualization_id": "b46a868e-a174-485c-bc32-53c41bf50454"
+        "visualization_id": "443418e6-9378-4147-bad9-4f0df1e101db"
+      },
+      {
+        "id": "aa51e4fa-d81d-4dc7-903b-6eb5b2261588",
+        "width": 1,
+        "options": {
+          "parameterMappings": {},
+          "title": "By Age Group",
+          "description": "",
+          "isHidden": false,
+          "position": {
+            "autoHeight": false,
+            "sizeX": 2,
+            "sizeY": 5,
+            "minSizeX": 1,
+            "maxSizeX": 6,
+            "minSizeY": 5,
+            "maxSizeY": 1000,
+            "col": 2,
+            "row": 0
+          },
+          "overrideColors": false
+        },
+        "dashboard_id": "9d1ab3fc-a740-4e2b-a8e8-f0288fbc9af4",
+        "text": "",
+        "visualization_id": "9d7b58b0-7e81-489c-b71d-2ed0536ae274"
+      },
+      {
+        "id": "aaf1fa7d-5b4e-4924-b797-79576cdabda1",
+        "width": 1,
+        "options": {
+          "parameterMappings": {},
+          "title": "Pct High Risk",
+          "description": "",
+          "isHidden": false,
+          "position": {
+            "autoHeight": false,
+            "sizeX": 1,
+            "sizeY": 5,
+            "minSizeX": 1,
+            "maxSizeX": 6,
+            "minSizeY": 1,
+            "maxSizeY": 1000,
+            "col": 1,
+            "row": 0
+          },
+          "overrideColors": false
+        },
+        "dashboard_id": "9d1ab3fc-a740-4e2b-a8e8-f0288fbc9af4",
+        "text": "",
+        "visualization_id": "1374d473-0b9c-4449-a46c-33c7811a5bcb"
       }
     ],
     "tags": [],
     "color_palette": null,
     "dashboard_filters_enabled": false,
-    "parent": "folders/1651724910874369",
+    "parent": "folders/4402048912220994",
     "is_archived": false
   },
   "version": "1.0"

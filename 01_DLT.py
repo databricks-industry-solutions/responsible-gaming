@@ -2,11 +2,11 @@
 # MAGIC %md-sandbox
 # MAGIC ## Step 1: Data Ingestion with Delta Live Tables
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-1.png" width="700"/>
-# MAGIC 
+# MAGIC
 # MAGIC To simplify the ingestion process and accelerate our developments, we'll leverage [Delta Live Tables (DLT)](https://www.databricks.com/product/delta-live-tables).
-# MAGIC 
+# MAGIC
 # MAGIC DLT lets you declare your transformations and will handle the Data Engineering complexity for you:
-# MAGIC 
+# MAGIC
 # MAGIC - Data quality tracking with expectations
 # MAGIC - Continuous or scheduled ingestion, orchestrated as pipeline
 # MAGIC - Build lineage and manage data dependencies
@@ -23,16 +23,16 @@
 # MAGIC %md
 # MAGIC ### Step 1.2: Create and run Delta Live Tables pipeline
 # MAGIC In step 2 of the RUNME file, you were given the option to run the workflow as a multi-step job (2a) or to run the notebooks interactively (2b). 
-# MAGIC 
+# MAGIC
 # MAGIC * If you opted for running the workflow as a multi-step job (2a), then the code in this notebook has already been run and you can move on to the next step. 
-# MAGIC 
+# MAGIC
 # MAGIC * If you opted for running the notebooks interactively (2b), you will now need to create a Delta Live Tables pipeline.
 # MAGIC    * Click on `Workflows` in the left panel
 # MAGIC    * Click on `Delta Live Tables` in the top nav
 # MAGIC    * Click `Create Pipeline`
 # MAGIC      * `Pipeline Name` - this can be anything you choose. We suggest `SOLACC_real_money_gaming`
 # MAGIC      * `Pipeline Mode` - select 'Triggered' as this only needs to be run one time.
-# MAGIC      * `Notebook Libraries` - click on the folder icon and navigate to the name of this notebook. The path will be similar to `/Repos/UserName/real-money-gaming/01_DLT`
+# MAGIC      * `Source Code` - click on the folder icon and navigate to the name of this notebook. The path will be similar to `/Repos/UserName/real-money-gaming/01_DLT`
 # MAGIC      * `Storage Location` - enter `dbfs:/databricks_solacc/real_money_gaming/dlt`. This is the location that data will be written out to when creating silver/gold tables.
 # MAGIC      * `Target Schema` - enter `SOLACC_real_money_gaming`. This is the name of the database that we will store our tables in.
 # MAGIC  
@@ -44,9 +44,9 @@
 
 # MAGIC %md
 # MAGIC ### Step 1.3: Stream in-game clickstream data into Delta Lake
-# MAGIC 
+# MAGIC
 # MAGIC In this step, we use Delta Live Tables to load our raw clickstream data into the table `bronze_clickstream.` As you'll notice, we've applied the `@dlt.table decorator` to our function `bronze_clickstream`, which instructs DLT to create a table using the data returned by the function. 
-# MAGIC 
+# MAGIC
 # MAGIC Visit our [Delta Live Tables Python language reference](https://docs.databricks.com/workflows/delta-live-tables/delta-live-tables-python-ref.html) for more details on DLT syntax 
 
 # COMMAND ----------
@@ -70,9 +70,9 @@ def bronze_clickstream():
 
 # MAGIC %md-sandbox
 # MAGIC ### Step 1.4: Create a silver table for each beacon
-# MAGIC 
+# MAGIC
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-2.png" width="700"/>
-# MAGIC 
+# MAGIC
 # MAGIC The next step is to parse the incoming bronze table and build one silver table for each beacon type
 # MAGIC * **Bets:** customer places wager on their game of choice.
 # MAGIC * **Deposits:** customer deposits money into their account for betting.
@@ -125,9 +125,9 @@ def silver_withdrawals():
 
 # MAGIC %md-sandbox
 # MAGIC ### Step 1.5: Create Gold Table
-# MAGIC 
+# MAGIC
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-3.png" width="700"/>
-# MAGIC 
+# MAGIC
 # MAGIC Once our Silver tables are ready, we'll merge the information they contain into a final daily activity Gold table, ready for data analysis and data science.
 
 # COMMAND ----------

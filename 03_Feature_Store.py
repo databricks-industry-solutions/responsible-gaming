@@ -1,15 +1,15 @@
 # Databricks notebook source
 # MAGIC %md-sandbox
-# MAGIC 
+# MAGIC
 # MAGIC ###Step 3: Create table in Feature Store for customer features
-# MAGIC 
+# MAGIC
 # MAGIC #### Feature Store
-# MAGIC 
-# MAGIC The [Databricks Feature Store](https://docs.databricks.com/applications/machine-learning/feature-store/index.html) provides data teams with the ability to create new features, explore and reuse exist ones, publish features to low-latency online stores, build training sets and retrieve feature values for batch inference.
-# MAGIC 
+# MAGIC
+# MAGIC The [Databricks Feature Store](https://docs.databricks.com/applications/machine-learning/feature-store/index.html) provides data teams with the ability to create new features, explore and reuse existing ones, publish features to low-latency online stores, build training sets and retrieve feature values for batch inference.
+# MAGIC
 # MAGIC Key benefits of the Databricks Feature Store:
-# MAGIC * **Discoverabilty:** teams can't reuse what they can't find, so one purpose of feature stores is discovery, or surfacing features that have already been usefully refined from raw data. With the Databricks Feature Store UI, features can be easily browsed and search for within the Databricks workspace.
-# MAGIC * **Lineage:** reusing a feature computered for one purpose means that changes to its computation now affect many consumers. Detailed visibility into upstream and downstream lineage means that feature producers and consumers can reliably share and reuse features within an organization.
+# MAGIC * **Discoverabilty:** teams can't reuse what they can't find, so one purpose of feature stores is discovery, or surfacing features that have already been usefully refined from raw data. With the Databricks Feature Store UI, features can be easily browsed and searched for within the Databricks workspace.
+# MAGIC * **Lineage:** reusing a feature computed for one purpose means that changes to its computation now affect many consumers. Detailed visibility into upstream and downstream lineage means that feature producers and consumers can reliably share and reuse features within an organization.
 # MAGIC * **Integration with model scoring and serving:** when you use features from Databricks Feature Store to train a model, the model is packaged with feature metadata. When you use the model for batch scoring or online inference, it automatically retrieves features from Feature Store. The caller does not need to know about them or include logic to look up or join features to score new data. This makes model deployment and updates much easier.
 
 # COMMAND ----------
@@ -20,17 +20,17 @@
 # COMMAND ----------
 
 # MAGIC %md-sandbox
-# MAGIC 
+# MAGIC
 # MAGIC ###Step 3.1: Load tables to compute features
-# MAGIC 
+# MAGIC
 # MAGIC #### Crafting our features
-# MAGIC 
+# MAGIC
 # MAGIC <img src='https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-5.png' width='700' style="float: right">
-# MAGIC 
+# MAGIC
 # MAGIC Many of the customer features that are useful for managing responsible gaming are useful for other use cases as well, such as predicting propensity to churn and personalizating marketing communications.
-# MAGIC 
+# MAGIC
 # MAGIC This reusability makes customer features a prime candidate for a feature store table. 
-# MAGIC 
+# MAGIC
 # MAGIC In this step, we will create a customer_features table containing the following:
 # MAGIC * **Demographic information** such as age band and gender.
 # MAGIC * **Account activity** such as registration, deposits, and withdrawals.

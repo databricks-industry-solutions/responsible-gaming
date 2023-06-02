@@ -1,16 +1,16 @@
 # Databricks notebook source
 # MAGIC %md-sandbox
 # MAGIC ## Step 2: Exploratory Data Analysis
-# MAGIC 
+# MAGIC
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-4.png" width="700"/>
-# MAGIC 
+# MAGIC
 # MAGIC Now that we've streamed in and parsed our data, it's time to conduct exploratory data analysis (EDA).
-# MAGIC 
+# MAGIC
 # MAGIC In practice, EDA can be done in a number of different ways.
 # MAGIC - Leverage data profiling capabilities within notebooks
 # MAGIC - Build a dashboard using Databricks SQL or other BI tool
 # MAGIC - Ad hoc queries and visualizations
-# MAGIC 
+# MAGIC
 # MAGIC In this notebook, we'll explore the first two: data profiling within a notebook and Databricks SQL
 
 # COMMAND ----------
@@ -21,6 +21,10 @@
 
 # MAGIC %md
 # MAGIC ### Step 2.1: Data profiling within a notebook
+# MAGIC * To view a Data Profile report:
+# MAGIC   * Run the next cell `bronze_clickstream`
+# MAGIC   * Click the `+` sign that appears above the column headers
+# MAGIC   * Select `Data Profile`
 
 # COMMAND ----------
 
@@ -43,4 +47,4 @@
 
 # MAGIC %md
 # MAGIC ### Step 2.2: Databricks SQL
-# MAGIC * See dashboard created in the **RUNME** notebook
+# MAGIC * See dashboard created in the last cell of the **RUNME** notebook
