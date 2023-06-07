@@ -1,4 +1,19 @@
 # Databricks notebook source
+# MAGIC %md
+# MAGIC ## Overview
+# MAGIC The need and importance of Responsible Gaming initiatives is only going to grow as new regulation, enhanced gameplay experience, and general expansion take place in the Betting & Gaming industry. At the same time, delivering the right intervention to the right person at the right time is incredibly complex.
+# MAGIC
+# MAGIC In this solution acelerator, we demonstrate how to identify and predict high risk behaviors to help you keep your customers safe from harm. 
+# MAGIC
+# MAGIC To do this, we take the following steps.
+# MAGIC 1. Ingest and process synthetic gameplay data into Databricks using Delta Live Tables
+# MAGIC 2. Perform exploratory data analysis using notebook functionality and Databricks SQL
+# MAGIC 3. Create a feature store table for customer features using Databricks Feature Store
+# MAGIC 4. Train a classification model using Xgboost, Hyperopt, and MLflow
+# MAGIC 5. Perform inference to classify high risk behavior 
+
+# COMMAND ----------
+
 # MAGIC %md-sandbox
 # MAGIC ## Step 1: Data Ingestion with Delta Live Tables
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-1.png" width="700"/>
@@ -154,3 +169,17 @@ def gold_daily_activity():
 
   return (daily_betting_activity.join(daily_deposits,on=['customer_id','date'],how='outer')
           .join(daily_withdrawals,on=['customer_id','date'],how='outer').join(daily_high_risk_flags,on=['customer_id', 'date'],how='outer').na.fill(0))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC &copy; 2022 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the [Databricks License](https://databricks.com/db-license-source).  All included or referenced third party libraries are subject to the licenses set forth below.
+# MAGIC
+# MAGIC | Library Name   | Library License       | Library License URL     | Library Source URL                                              |
+# MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
+# MAGIC | Hyperopt     | BSD License (BSD) |	https://github.com/hyperopt/hyperopt/blob/master/LICENSE.txt	| https://github.com/hyperopt/hyperopt  |
+# MAGIC | Pandas       | BSD 3-Clause License |https://github.com/pandas-dev/pandas/blob/main/LICENSE| https://github.com/pandas-dev/pandas |
+# MAGIC | PyYAML       | MIT        | https://github.com/yaml/pyyaml/blob/master/LICENSE | https://github.com/yaml/pyyaml                      |
+# MAGIC | Scikit-learn | BSD 3-Clause "New" or "Revised" License | https://github.com/scikit-learn/scikit-learn/blob/main/COPYING | https://github.com/scikit-learn/scikit-learn  |
+# MAGIC |Spark         | Apache-2.0 License | https://github.com/apache/spark/blob/master/LICENSE | https://github.com/apache/spark|
+# MAGIC | Xgboost      | Apache License 2.0 | https://github.com/dmlc/xgboost/blob/master/LICENSE | https://github.com/dmlc/xgboost  |

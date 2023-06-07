@@ -1,14 +1,14 @@
 # Databricks notebook source
 # MAGIC %md
-# MAGIC 
+# MAGIC
 # MAGIC We previously saw how to create a DLT pipeline to ingest and prepare clickstream data to use for analytics and machine learning. We then created a feature store table containing information about our customers. This notebook will show how we can take this one step further and leverage this data to classify high risk behavior, helping us keep players safe from harm.
-# MAGIC 
+# MAGIC
 # MAGIC ## Step 4: Train classification model (Using XG Boost)
-# MAGIC 
+# MAGIC
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-7.png" width="600"/>
-# MAGIC 
+# MAGIC
 # MAGIC Now that our data is prepared, we can start building a ML model to classify high risk behavior using XGBoost.
-# MAGIC 
+# MAGIC
 # MAGIC We'll be leveraging hyperopt to do hyperparameter tuning and find the best set of hyperparameters for our model.
 
 # COMMAND ----------
@@ -162,11 +162,11 @@ with mlflow.start_run(run_name='XGBClassifier') as run:
 # COMMAND ----------
 
 # MAGIC %md-sandbox 
-# MAGIC 
+# MAGIC
 # MAGIC **Why is it so great?**
-# MAGIC 
+# MAGIC
 # MAGIC <div style="float:right"><img src="https://quentin-demo-resources.s3.eu-west-3.amazonaws.com/images/tuning-2.gif" style="height: 280px; margin-left: 20px"/></div>
-# MAGIC 
+# MAGIC
 # MAGIC - Trials are automatically logged in MLFlow! It's then easy to compare all the runs and understand how each parameter play a role in the model
 # MAGIC - Job by providing a `SparkTrial` instead of the standard `Trial`, the training and tuning is automatically paralellized in your cluster
 # MAGIC - Training can easily be launched as a job and model deployment automatized based on the best model performance
@@ -192,18 +192,18 @@ client.transition_model_version_stage(name = "rmg_high_risk_classifier", version
 
 # MAGIC %md-sandbox
 # MAGIC ### Step 4.4: Use model to classify high risk behavior
-# MAGIC 
+# MAGIC
 # MAGIC <img style="float: right; padding-left: 10px" src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-7.png" width="600"/>
-# MAGIC 
+# MAGIC
 # MAGIC Now that our model is built and saved in MLFlow registry, we can load it to run our inferences at scale.
-# MAGIC 
+# MAGIC
 # MAGIC This can be done:
-# MAGIC 
+# MAGIC
 # MAGIC * In batch or streaming (ex: refresh every night)
 # MAGIC   * Using a standard notebook job
 # MAGIC   * Or as part of the DLT pipeline we built
 # MAGIC * In real-time over a REST API, deploying Databricks serving capabilities
-# MAGIC 
+# MAGIC
 # MAGIC In the following cell, we'll focus on deploying the model in this notebook directly
 
 # COMMAND ----------
@@ -222,3 +222,17 @@ predictions = fs.score_batch(
 
 # DBTITLE 1,View predictions
 display(predictions.filter(col('prediction') == 1))
+
+# COMMAND ----------
+
+# MAGIC %md
+# MAGIC &copy; 2022 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the [Databricks License](https://databricks.com/db-license-source).  All included or referenced third party libraries are subject to the licenses set forth below.
+# MAGIC
+# MAGIC | Library Name   | Library License       | Library License URL     | Library Source URL                                              |
+# MAGIC |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
+# MAGIC | Hyperopt     | BSD License (BSD) |	https://github.com/hyperopt/hyperopt/blob/master/LICENSE.txt	| https://github.com/hyperopt/hyperopt  |
+# MAGIC | Pandas       | BSD 3-Clause License |https://github.com/pandas-dev/pandas/blob/main/LICENSE| https://github.com/pandas-dev/pandas |
+# MAGIC | PyYAML       | MIT        | https://github.com/yaml/pyyaml/blob/master/LICENSE | https://github.com/yaml/pyyaml                      |
+# MAGIC | Scikit-learn | BSD 3-Clause "New" or "Revised" License | https://github.com/scikit-learn/scikit-learn/blob/main/COPYING | https://github.com/scikit-learn/scikit-learn  |
+# MAGIC |Spark         | Apache-2.0 License | https://github.com/apache/spark/blob/master/LICENSE | https://github.com/apache/spark|
+# MAGIC | Xgboost      | Apache License 2.0 | https://github.com/dmlc/xgboost/blob/master/LICENSE | https://github.com/dmlc/xgboost  |

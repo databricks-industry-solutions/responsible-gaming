@@ -4,23 +4,39 @@
 [![CLOUD](https://img.shields.io/badge/CLOUD-ALL-blue?logo=googlecloud&style=for-the-badge)](https://cloud.google.com/databricks)
 [![POC](https://img.shields.io/badge/POC-10_days-green?style=for-the-badge)](https://databricks.com/try-databricks)
 
-*Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud exercitation ullamco laboris nisi ut aliquip ex ea commodo consequat. Duis aute irure dolor in reprehenderit in voluptate velit esse cillum dolore eu fugiat nulla pariatur. Excepteur sint occaecat cupidatat non proident, sunt in culpa qui officia deserunt mollit anim id est laborum.*
+### Responsible Gaming
+The need and importance of Responsible Gaming initiatives is only going to grow as new regulation, enhanced gameplay experience, and general expansion take place in the Betting & Gaming industry. At the same time, delivering the right intervention to the right person at the right time is incredibly complex.
+
+In this solution acelerator, we demonstrate how to identify and predict high risk behaviors to help you keep your customers safe from harm. 
+
+To do this, we take the following steps.
+1. Ingest and process synthetic gameplay data into Databricks using Delta Live Tables
+2. Perform exploratory data analysis using notebook functionality and Databricks SQL
+3. Create a feature store table for customer features using Databricks Feature Store
+4. Train a classification model using Xgboost, Hyperopt, and MLflow
+5. Perform inference to classify high risk behavior 
 
 ___
-<john.doe@databricks.com>
+<dan.morris@databricks.com>
 
 ___
 
 
-IMAGE TO REFERENCE ARCHITECTURE
+<img src="https://cme-solution-accelerators-images.s3.us-west-2.amazonaws.com/responsible-gaming/rmg-demo-flow-1.png"/>
 
 ___
 
 &copy; 2022 Databricks, Inc. All rights reserved. The source in this notebook is provided subject to the Databricks License [https://databricks.com/db-license-source].  All included or referenced third party libraries are subject to the licenses set forth below.
 
-| library                                | description             | license    | source                                              |
+| Library Name   | Library License       | Library License URL     | Library Source URL                                              |
 |----------------------------------------|-------------------------|------------|-----------------------------------------------------|
-| PyYAML                                 | Reading Yaml files      | MIT        | https://github.com/yaml/pyyaml                      |
+| Hyperopt     | BSD License (BSD) |	https://github.com/hyperopt/hyperopt/blob/master/LICENSE.txt	| https://github.com/hyperopt/hyperopt  |
+| Pandas       | BSD 3-Clause License |https://github.com/pandas-dev/pandas/blob/main/LICENSE| https://github.com/pandas-dev/pandas |
+| PyYAML       | MIT        | https://github.com/yaml/pyyaml/blob/master/LICENSE | https://github.com/yaml/pyyaml                      |
+| Scikit-learn | BSD 3-Clause "New" or "Revised" License | https://github.com/scikit-learn/scikit-learn/blob/main/COPYING | https://github.com/scikit-learn/scikit-learn  |
+|Spark         | Apache-2.0 License | https://github.com/apache/spark/blob/master/LICENSE | https://github.com/apache/spark|
+| Xgboost      | Apache License 2.0 | https://github.com/dmlc/xgboost/blob/master/LICENSE | https://github.com/dmlc/xgboost  |
+
 
 ## Instruction
 
