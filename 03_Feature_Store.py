@@ -1,4 +1,8 @@
 # Databricks notebook source
+# MAGIC %md This notebook is available at https://github.com/databricks-industry-solutions/real-money-gaming. For more information about this solution accelerator, visit https://www.databricks.com/solutions/accelerators/responsible-gaming.
+
+# COMMAND ----------
+
 # MAGIC %md-sandbox
 # MAGIC
 # MAGIC ###Step 3: Create table in Feature Store for customer features

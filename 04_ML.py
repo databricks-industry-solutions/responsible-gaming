@@ -1,4 +1,8 @@
 # Databricks notebook source
+# MAGIC %md This notebook is available at https://github.com/databricks-industry-solutions/real-money-gaming. For more information about this solution accelerator, visit https://www.databricks.com/solutions/accelerators/responsible-gaming.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC
 # MAGIC We previously saw how to create a DLT pipeline to ingest and prepare clickstream data to use for analytics and machine learning. We then created a feature store table containing information about our customers. This notebook will show how we can take this one step further and leverage this data to classify high risk behavior, helping us keep players safe from harm.

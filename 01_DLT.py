@@ -1,4 +1,8 @@
 # Databricks notebook source
+# MAGIC %md This notebook is available at https://github.com/databricks-industry-solutions/real-money-gaming. For more information about this solution accelerator, visit https://www.databricks.com/solutions/accelerators/responsible-gaming.
+
+# COMMAND ----------
+
 # MAGIC %md
 # MAGIC ## Overview
 # MAGIC The need and importance of Responsible Gaming initiatives is only going to grow as new regulation, enhanced gameplay experience, and general expansion take place in the Betting & Gaming industry. At the same time, delivering the right intervention to the right person at the right time is incredibly complex.
